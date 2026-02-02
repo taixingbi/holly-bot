@@ -40,7 +40,6 @@
 7. **Stream result** → Emit SSE `result` or `error`.
 8. **Client** → Consumes SSE stream and updates UI with status and final response.
 
-
 ---
 
 ## Local run
