@@ -38,3 +38,4 @@ fly deploy
 
 To confirm: `fly secrets list`. If you see "MCP unavailable" or "Available: (none)", check that `MCP_URL` is set and the MCP server is reachable.
 # holly-bot
+# holly-bot
