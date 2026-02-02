@@ -1,5 +1,6 @@
-const config = {
-  plugins: ["@tailwindcss/postcss"],
-};
+import tailwindPostcss from "@tailwindcss/postcss";
 
-export default config;
+// Next.js postcss-loader expects string plugin names; Vite/Vitest expects plugin objects.
+const plugins = process.env.VITEST ? [tailwindPostcss] : ["@tailwindcss/postcss"];
+
+export default { plugins };

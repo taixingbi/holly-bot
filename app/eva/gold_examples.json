@@ -1,0 +1,57 @@
+[
+  {
+    "inputs": {
+      "message": "Hi"
+    },
+    "outputs": {
+      "answer": "what can i help you with?"
+    },
+    "metadata": { "kind": "graph-core", "metric": "greeting" }
+  },
+  {
+    "inputs": {
+      "message": "Which jurisdiction has the highest-paying job title (single maximum salary amount)?"
+    },
+    "outputs": {
+      "answer": "Ventura – Assistant Chief Probation Officer\nHighest single salary: $8,630.52"
+    },
+    "metadata": { "kind": "graph-core", "metric": "sql" }
+  },
+  {
+    "inputs": {
+      "message": "Which jurisdiction has the highest average amount, and what is that amount?"
+    },
+    "outputs": {
+      "answer": "Ventura has the highest average amount, at $5,572.36."
+    },
+    "metadata": { "kind": "graph-core", "metric": "sql" }
+  },
+  {
+    "inputs": {
+      "message": "In San Bernardino, for the job title Assistant Chief Probation Officer, what is the maximum salary amount?"
+    },
+    "outputs": {
+      "answer": "In San Bernardino, the Assistant Chief Probation Officer position has a maximum salary of $8,630.52."
+    },
+    "metadata": { "kind": "graph-core", "metric": "sql" }
+  },
+  {
+    "inputs": {
+      "message": "What is the average salary in Ventura?"
+    },
+    "outputs": {
+      "answer": "The average salary for Ventura is $5,572.36."
+    },
+    "metadata": { "kind": "graph-core", "metric": "sql" }
+  }
+  ,
+  {
+    "inputs": {
+      "message": "What is the average salary in Oakland?"
+    },
+    "outputs": {
+      "answer": "Your dataset only includes jurisdictions like San Bernardino, Ventura, and San Diego County. There are no salary records for Oakland, so an average salary cannot be calculated."
+    },
+    "metadata": { "kind": "graph-core", "metric": "sql" }
+  }
+]
