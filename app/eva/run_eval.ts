@@ -6,10 +6,10 @@ loadEnv({ path: resolve(process.cwd(), ".env.local") });
 
 import { readFileSync } from "fs";
 import { Client } from "langsmith";
-import { evaluate, type EvaluatorT } from "langsmith/evaluation";
+import { evaluate } from "langsmith/evaluation";
 import { config } from "../lib/config";
 import { graph } from "../lib/graph-core";
-import llmJudge, { hallucination, correctness, conciseness } from "./evaluators/llm_judge";
+import { hallucination, correctness, conciseness } from "./evaluators/llm_judge";
 
 const DATASET_NAME = config.eval.dataset;
 

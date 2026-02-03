@@ -94,41 +94,45 @@ function getQuestionPredictionReference(args: {
   return { question, prediction, reference };
 }
 
+function createEvaluator(key: string, promptTemplate: string, requiresReference: boolean = true) {
+  return async function(args: {
+    inputs: Inputs;
+    outputs: Outputs;
+    referenceOutputs?: ReferenceOutputs;
+  }): Promise<EvalResult> {
+    const { question, prediction, reference } = getQuestionPredictionReference(args);
+
+    if (requiresReference && !reference.trim()) {
+      return {
+        key,
+        score: 0,
+        comment: `Missing reference output; ${key} evaluator requires one.`,
+      };
+    }
+
+    const prompt = promptTemplate
+      .replace(/\$\{question\}/g, question)
+      .replace(/\$\{prediction\}/g, prediction)
+      .replace(/\$\{reference\}/g, reference);
+
+    const { score, reason } = await runJudge(prompt);
+    return { key, score, comment: reason };
+  };
+}
+
 /* ------------------------- Evaluators ----------------------------- */
 
-/**
- * Hallucination
- * 1.0 = fully supported by reference
- * 0.5 = minor unsupported detail
- * 0.0 = major hallucination / contradiction
- */
-async function hallucinationEval(args: {
-  inputs: Inputs;
-  outputs: Outputs;
-  referenceOutputs?: ReferenceOutputs;
-}): Promise<EvalResult> {
-  const { question, prediction, reference } =
-    getQuestionPredictionReference(args);
-
-  if (!reference.trim()) {
-    return {
-      key: "hallucination",
-      score: 0,
-      comment: "Missing reference output; hallucination evaluator requires one.",
-    };
-  }
-
-  const prompt = `
+const hallucinationPrompt = `
 You are evaluating whether a SQL-backed assistant output contains hallucinations.
 
 Question:
-${question}
+\${question}
 
 Model Answer:
-${prediction}
+\${prediction}
 
 Reference Answer (gold):
-${reference}
+\${reference}
 
 Task:
 Decide if the Model Answer introduces facts, numbers, jurisdictions, job titles,
@@ -146,43 +150,17 @@ Scoring:
 - 0.0 = major hallucination or contradiction
 `;
 
-  const { score, reason } = await runJudge(prompt);
-  return { key: "hallucination", score, comment: reason };
-}
-
-/**
- * Correctness
- * 1.0 = semantically matches reference
- * 0.5 = partially correct
- * 0.0 = incorrect
- */
-async function correctnessEval(args: {
-  inputs: Inputs;
-  outputs: Outputs;
-  referenceOutputs?: ReferenceOutputs;
-}): Promise<EvalResult> {
-  const { question, prediction, reference } =
-    getQuestionPredictionReference(args);
-
-  if (!reference.trim()) {
-    return {
-      key: "correctness",
-      score: 0,
-      comment: "Missing reference output; correctness evaluator requires one.",
-    };
-  }
-
-  const prompt = `
+const correctnessPrompt = `
 You are grading correctness for a SQL-backed assistant.
 
 Question:
-${question}
+\${question}
 
 Model Answer:
-${prediction}
+\${prediction}
 
 Reference Answer (gold):
-${reference}
+\${reference}
 
 Return ONLY JSON:
 {
@@ -196,31 +174,14 @@ Rules:
 - Empty or non-responsive answers score 0.0
 `;
 
-  const { score, reason } = await runJudge(prompt);
-  return { key: "correctness", score, comment: reason };
-}
-
-/**
- * Conciseness
- * 1.0 = concise and direct
- * 0.5 = acceptable but wordy
- * 0.0 = verbose / irrelevant
- */
-async function concisenessEval(args: {
-  inputs: Inputs;
-  outputs: Outputs;
-}): Promise<EvalResult> {
-  const { question, prediction } =
-    getQuestionPredictionReference(args);
-
-  const prompt = `
+const concisenessPrompt = `
 You are evaluating conciseness of an assistant answer.
 
 Question:
-${question}
+\${question}
 
 Model Answer:
-${prediction}
+\${prediction}
 
 Return ONLY JSON:
 {
@@ -235,9 +196,29 @@ Guidelines:
 - Empty or non-responsive answers score 0.0
 `;
 
-  const { score, reason } = await runJudge(prompt);
-  return { key: "conciseness", score, comment: reason };
-}
+/**
+ * Hallucination
+ * 1.0 = fully supported by reference
+ * 0.5 = minor unsupported detail
+ * 0.0 = major hallucination / contradiction
+ */
+const hallucinationEval = createEvaluator("hallucination", hallucinationPrompt);
+
+/**
+ * Correctness
+ * 1.0 = semantically matches reference
+ * 0.5 = partially correct
+ * 0.0 = incorrect
+ */
+const correctnessEval = createEvaluator("correctness", correctnessPrompt);
+
+/**
+ * Conciseness
+ * 1.0 = concise and direct
+ * 0.5 = acceptable but wordy
+ * 0.0 = verbose / irrelevant
+ */
+const concisenessEval = createEvaluator("conciseness", concisenessPrompt, false);
 
 /* ---------------------- Combined Evaluator ------------------------ */
 
