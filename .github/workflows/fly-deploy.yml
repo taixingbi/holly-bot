@@ -12,7 +12,6 @@ jobs:
     concurrency: deploy-group    # optional: ensure only one action runs at a time
     steps:
       - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions@master
-        with:
-          args: deploy --remote-only
-          api-token: ${{ secrets.FLY_API_TOKEN }}
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl auth login --access-token ${{ secrets.FLY_API_TOKEN }}
+      - run: flyctl deploy --remote-only
