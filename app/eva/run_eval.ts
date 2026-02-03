@@ -9,7 +9,7 @@ import { Client } from "langsmith";
 import { evaluate, type EvaluatorT } from "langsmith/evaluation";
 import { config } from "../lib/config";
 import { graph } from "../lib/graph-core";
-import llmJudge from "./evaluators/llm_judge";
+import llmJudge, { hallucination, correctness, conciseness } from "./evaluators/llm_judge";
 
 const DATASET_NAME = config.eval.dataset;
 
@@ -84,7 +84,7 @@ async function main() {
 
   const results = await evaluate(targetFn, {
     data: DATASET_NAME,
-    evaluators: [llmJudge as EvaluatorT],
+    evaluators: [hallucination, correctness, conciseness],
     client,
     experimentPrefix: config.eval.experimentPrefix,
     description: "Evaluate LangGraph routing + MCP SQL answers",
