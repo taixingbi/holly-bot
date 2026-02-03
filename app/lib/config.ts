@@ -21,9 +21,9 @@ export const config = {
   },
   get eval() {
     return {
-      dataset: fromEnv("EVAL_DATASET", "sql-routing-eval"),
+      dataset: fromEnv("EVAL_DATASET", "holly-bot-eval"),
       concurrency: Number(process.env.EVAL_CONCURRENCY ?? 4),
-      experimentPrefix: fromEnv("EVAL_EXPERIMENT_PREFIX", "nextjs-langgraph v:1.01"),
+      experimentPrefix: fromEnv("EVAL_EXPERIMENT_PREFIX", "holly-bot-v1.01"),
     };
   },
 };
