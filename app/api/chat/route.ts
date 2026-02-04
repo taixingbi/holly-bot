@@ -37,17 +37,29 @@ export async function POST(req: NextRequest) {
         const status = route({ message, response: "" });
         send("status", status === "llm" ? "thinking" : "searching_sql");
 
+        let capturedRunId: string | undefined;
+
         const result = await graph.invoke(
           { message },
           {
             tags: ["nextjs", "langgraph", "v:1.01"],
             metadata: { route_hint: "auto" },
+            callbacks: [
+              {
+                handleChainStart: (chain: unknown, inputs: Record<string, unknown>, runId: string, parentRunId?: string) => {
+                  // Capture the root run id (when there's no parent)
+                  if (!parentRunId && !capturedRunId) {
+                    capturedRunId = runId;
+                  }
+                },
+              },
+            ],
           }
         );
 
         const response = result.response ?? "";
         setCachedResponse(message, response);
-        send("result", response);
+        send("result", { response, run_id: capturedRunId });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         send("error", msg);
