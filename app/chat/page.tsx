@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = { role: "user" | "assistant"; content: string; run_id?: string };
 type Status = "thinking" | "searching_sql" | "cached" | "error" | null;
 
 export default function ChatPage() {
@@ -10,11 +10,33 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<Status>(null);
+  const [starRatings, setStarRatings] = useState<Map<string, number>>(new Map());
   const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    listRef.current?.scrollTo(0, listRef.current.scrollHeight);
-  }, [messages, loading, status]);
+  const handleStarRating = async (message: Message, rating: number) => {
+    if (!message.run_id) {
+      console.error("No run_id available for feedback");
+      return;
+    }
+
+    const score = rating / 5; // Convert 1-5 stars to 0-1 score
+    console.log(`Star rating: ${rating}/5, Score: ${score}`);
+
+    try {
+      await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          run_id: message.run_id,
+          rating,
+          feedback: "star_rating"
+        }),
+      });
+      setStarRatings(prev => new Map(prev).set(message.content, rating));
+    } catch (error) {
+      console.error("Failed to save star rating:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +109,12 @@ export default function ChatPage() {
             const data = JSON.parse(dataMatch[1]);
             if (event === "status") setStatus(data as Status);
             if (event === "result") {
-              setMessages((prev) => [...prev, { role: "assistant", content: data }]);
+              const resultData = typeof data === 'object' && data !== null ? data : { response: data };
+              setMessages((prev) => [...prev, { 
+                role: "assistant", 
+                content: resultData.response || data,
+                run_id: resultData.run_id 
+              }]);
               setStatus(null);
               setLoading(false);
             }
@@ -114,7 +141,12 @@ export default function ChatPage() {
             const data = JSON.parse(dataMatch[1]);
             if (event === "status") setStatus(data as Status);
             if (event === "result") {
-              setMessages((prev) => [...prev, { role: "assistant", content: data }]);
+              const resultData = typeof data === 'object' && data !== null ? data : { response: data };
+              setMessages((prev) => [...prev, { 
+                role: "assistant", 
+                content: resultData.response || data,
+                run_id: resultData.run_id 
+              }]);
               setStatus(null);
               setLoading(false);
             }
@@ -179,6 +211,41 @@ export default function ChatPage() {
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                {msg.role === "assistant" && (
+                  <div className="flex justify-end mt-2">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => handleStarRating(msg, star)}
+                          className={`transition-colors ${
+                            (starRatings.get(msg.content) || 0) >= star 
+                              ? 'text-yellow-400 hover:text-yellow-500' 
+                              : 'text-gray-300 hover:text-yellow-400'
+                          }`}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill={(starRatings.get(msg.content) || 0) >= star ? "currentColor" : "none"}
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                          </svg>
+                        </button>
+                      ))}
+                      {starRatings.get(msg.content) && (
+                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                          {starRatings.get(msg.content)}/5 ({(starRatings.get(msg.content)! / 5).toFixed(1)})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
